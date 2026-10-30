@@ -1,286 +1,137 @@
 """
-Algorithm Analysis Page for Smart Budget and Shopping Optimizer.
-Visualizes Time and Space Complexities, operations metrics,
-and live empirical benchmark graphs using Matplotlib.
+Algorithm Analysis Page (Simplified)
+Shows DAA theoretical complexities and a live empirical performance graph.
 """
 
 import customtkinter as ctk
-import tkinter as tk
 from tkinter import ttk
 import time
 import random
-from typing import Dict, Any, List
 import matplotlib
 matplotlib.use("TkAgg")
 from matplotlib.figure import Figure
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 
-from algorithms.knapsack import ZeroOneKnapsack
-from algorithms.fractional_knapsack import FractionalKnapsack
-from algorithms.merge_sort import MergeSort
-from algorithms.binary_search import BinarySearch
+from algorithms.knapsack import solve_01_knapsack
+from algorithms.fractional_knapsack import solve_fractional_knapsack
+from algorithms.merge_sort import merge_sort
+from algorithms.binary_search import binary_search_exact
 
 
 class AlgorithmAnalysisPage(ctk.CTkFrame):
-    """
-    Theoretical and empirical algorithm analysis dashboard
-    providing complexity analysis, operation counting, and live benchmarks.
-    """
-
-    COMPLEXITY_DATA = [
-        {
-            "name": "0/1 Knapsack",
-            "paradigm": "Dynamic Programming",
-            "best": "O(n * W)",
-            "avg": "O(n * W)",
-            "worst": "O(n * W)",
-            "space": "O(n * W)",
-            "description": "Explores optimal substructure via bottom-up tabulation matrix. Pseudo-polynomial time."
-        },
-        {
-            "name": "Fractional Knapsack",
-            "paradigm": "Greedy Method",
-            "best": "O(n log n)",
-            "avg": "O(n log n)",
-            "worst": "O(n log n)",
-            "space": "O(n)",
-            "description": "Ranks items by value-to-price ratio (v/w) using Merge Sort, then takes whole or fractional items."
-        },
-        {
-            "name": "Merge Sort",
-            "paradigm": "Divide and Conquer",
-            "best": "O(n log n)",
-            "avg": "O(n log n)",
-            "worst": "O(n log n)",
-            "space": "O(n)",
-            "description": "Recursively bisects array, sorts halves, and merges linearly. Stable and deterministic."
-        },
-        {
-            "name": "Binary Search",
-            "paradigm": "Decrease and Conquer",
-            "best": "O(1)",
-            "avg": "O(log n)",
-            "worst": "O(log n)",
-            "space": "O(1)",
-            "description": "Repeatedly halves search interval on sorted data. Preconditioned on sorted ordering."
-        }
-    ]
-
     def __init__(self, master, **kwargs):
         super().__init__(master, fg_color="transparent", **kwargs)
         self._build_ui()
         self.run_benchmark()
 
     def _build_ui(self):
-        # Header Row
-        header_frame = ctk.CTkFrame(self, fg_color="transparent")
-        header_frame.pack(fill="x", padx=25, pady=(20, 10))
+        # Header
+        header = ctk.CTkFrame(self, fg_color="transparent")
+        header.pack(fill="x", padx=20, pady=(15, 5))
 
         ctk.CTkLabel(
-            header_frame,
-            text="Algorithm Complexity & Empirical Analysis",
-            font=ctk.CTkFont(family="Segoe UI", size=24, weight="bold"),
+            header,
+            text="Algorithm Analysis & Benchmark",
+            font=ctk.CTkFont(size=22, weight="bold"),
             text_color="#F3F4F6"
         ).pack(side="left")
-
-        ctk.CTkLabel(
-            header_frame,
-            text="DAA Syllabus Performance Evaluation & Complexity Curves",
-            font=ctk.CTkFont(family="Segoe UI", size=13),
-            text_color="#9CA3AF"
-        ).pack(side="left", padx=15, pady=(5, 0))
 
         ctk.CTkButton(
-            header_frame,
-            text="⚡ Run Empirical Benchmark",
+            header,
+            text="⚡ Run Benchmark",
             command=self.run_benchmark,
             fg_color="#6C5CE7",
-            hover_color="#5848C2",
-            font=ctk.CTkFont(family="Segoe UI", size=12, weight="bold"),
-            width=200
+            width=140
         ).pack(side="right")
 
-        # Top Section: Theoretical Complexity Table
-        tbl_card = ctk.CTkFrame(self, fg_color="#1F2233", corner_radius=12, border_width=1, border_color="#2C3048")
-        tbl_card.pack(fill="x", padx=25, pady=(0, 10))
+        # Theoretical Table
+        tbl_frame = ctk.CTkFrame(self, fg_color="#1F2233", corner_radius=10)
+        tbl_frame.pack(fill="x", padx=20, pady=5)
 
-        tbl_hdr = ctk.CTkFrame(tbl_card, fg_color="transparent")
-        tbl_hdr.pack(fill="x", padx=15, pady=(10, 4))
+        ctk.CTkLabel(tbl_frame, text="DAA Complexity Summary Table", font=ctk.CTkFont(size=13, weight="bold")).pack(anchor="w", padx=12, pady=(8, 4))
 
-        ctk.CTkLabel(
-            tbl_hdr,
-            text="DAA Syllabus Theoretical Complexity Matrix",
-            font=ctk.CTkFont(family="Segoe UI", size=14, weight="bold"),
-            text_color="#F3F4F6"
-        ).pack(side="left")
-
-        cols = ("name", "paradigm", "best", "avg", "worst", "space", "desc")
-        self.tree = ttk.Treeview(tbl_card, columns=cols, show="headings", style="ProductTree.Treeview", height=4)
-        self.tree.heading("name", text="Algorithm Name")
+        cols = ("name", "paradigm", "time", "space")
+        self.tree = ttk.Treeview(tbl_frame, columns=cols, show="headings", height=4)
+        self.tree.heading("name", text="Algorithm")
         self.tree.heading("paradigm", text="DAA Paradigm")
-        self.tree.heading("best", text="Best Case")
-        self.tree.heading("avg", text="Average Case")
-        self.tree.heading("worst", text="Worst Case")
-        self.tree.heading("space", text="Auxiliary Space")
-        self.tree.heading("desc", text="Working Mechanism & Invariant")
+        self.tree.heading("time", text="Time Complexity")
+        self.tree.heading("space", text="Space Complexity")
+        self.tree.column("name", width=160)
+        self.tree.column("paradigm", width=180)
+        self.tree.column("time", width=140, anchor="center")
+        self.tree.column("space", width=140, anchor="center")
 
-        self.tree.column("name", width=140, anchor="w")
-        self.tree.column("paradigm", width=150, anchor="w")
-        self.tree.column("best", width=85, anchor="center")
-        self.tree.column("avg", width=95, anchor="center")
-        self.tree.column("worst", width=85, anchor="center")
-        self.tree.column("space", width=105, anchor="center")
-        self.tree.column("desc", width=340, anchor="w")
+        data = [
+            ("0/1 Knapsack", "Dynamic Programming", "O(n * W)", "O(n * W)"),
+            ("Fractional Knapsack", "Greedy Method", "O(n log n)", "O(n)"),
+            ("Merge Sort", "Divide and Conquer", "O(n log n)", "O(n)"),
+            ("Binary Search", "Decrease and Conquer", "O(log n)", "O(1)")
+        ]
+        for row in data:
+            self.tree.insert("", "end", values=row)
 
-        for item in self.COMPLEXITY_DATA:
-            self.tree.insert("", "end", values=(
-                item["name"], item["paradigm"], item["best"], item["avg"], item["worst"], item["space"], item["description"]
-            ))
+        self.tree.pack(fill="x", padx=10, pady=(0, 10))
 
-        self.tree.pack(fill="x", padx=12, pady=(0, 10))
-
-        # Bottom Section: Matplotlib Benchmark Curves
-        chart_card = ctk.CTkFrame(self, fg_color="#1F2233", corner_radius=12, border_width=1, border_color="#2C3048")
-        chart_card.pack(fill="both", expand=True, padx=25, pady=(0, 15))
-
-        chart_hdr = ctk.CTkFrame(chart_card, fg_color="transparent")
-        chart_hdr.pack(fill="x", padx=15, pady=(10, 2))
-
-        ctk.CTkLabel(
-            chart_hdr,
-            text="Empirical Benchmark Graphs (Execution Time & Operations Count vs. Input Size N)",
-            font=ctk.CTkFont(family="Segoe UI", size=14, weight="bold"),
-            text_color="#00CEC9"
-        ).pack(side="left")
-
-        self.benchmark_status = ctk.CTkLabel(
-            chart_hdr,
-            text="Ready",
-            font=ctk.CTkFont(family="Segoe UI", size=11),
-            text_color="#9CA3AF"
-        )
-        self.benchmark_status.pack(side="right")
-
-        self.chart_container = ctk.CTkFrame(chart_card, fg_color="transparent")
-        self.chart_container.pack(fill="both", expand=True, padx=12, pady=(0, 10))
+        # Chart Frame
+        self.chart_frame = ctk.CTkFrame(self, fg_color="#1F2233", corner_radius=10)
+        self.chart_frame.pack(fill="both", expand=True, padx=20, pady=(5, 15))
 
     def run_benchmark(self):
-        """Generates synthetic datasets of varying sizes and measures real runtime."""
-        self.benchmark_status.configure(text="Benchmarking in progress...", text_color="#FDCB6E")
-        self.update_idletasks()
+        for w in self.chart_frame.winfo_children():
+            w.destroy()
 
-        sizes = [15, 30, 60, 120, 240, 480]
+        sizes = [20, 50, 100, 200, 300]
+        t_dp = []
+        t_greedy = []
+        t_merge = []
 
-        time_01_knapsack = []
-        time_frac_knapsack = []
-        time_merge_sort = []
-        time_binary_search = []
-
-        ops_merge_sort = []
-        ops_binary_search = []
-        ops_dp = []
-
-        fixed_budget = 3000
-        sorter = MergeSort()
-
-        # Deterministic seed for reproducible evaluation curves
         rng = random.Random(42)
+        budget = 3000
 
         for n in sizes:
-            # Generate n random products
-            sample_prods = []
+            items = []
             for i in range(n):
-                sample_prods.append({
-                    "product_id": f"P{i+1:04d}",
-                    "product_name": f"Sample Item {i+1}",
-                    "category": rng.choice(["Electronics", "Accessories", "Stationery", "Daily Essentials"]),
-                    "price": rng.randint(100, 2500),
+                items.append({
+                    "product_id": f"P{i}",
+                    "product_name": f"Item {i}",
+                    "category": "General",
+                    "price": rng.randint(100, 2000),
                     "priority": rng.randint(1, 10),
                     "is_divisible": rng.choice([0, 1])
                 })
 
             # 1. 0/1 Knapsack
             t0 = time.perf_counter()
-            dp_res = ZeroOneKnapsack.solve(sample_prods, fixed_budget)
-            t_dp = (time.perf_counter() - t0) * 1000.0
-            time_01_knapsack.append(t_dp)
-            ops_dp.append(dp_res["operations_count"])
+            solve_01_knapsack(items, budget)
+            t_dp.append((time.perf_counter() - t0) * 1000.0)
 
             # 2. Fractional Knapsack
             t0 = time.perf_counter()
-            FractionalKnapsack.solve(sample_prods, fixed_budget)
-            t_gr = (time.perf_counter() - t0) * 1000.0
-            time_frac_knapsack.append(t_gr)
+            solve_fractional_knapsack(items, budget)
+            t_greedy.append((time.perf_counter() - t0) * 1000.0)
 
             # 3. Merge Sort
-            sorted_prods, comps, t_ms, _ = sorter.sort(sample_prods, key="price", ascending=True)
-            time_merge_sort.append(t_ms)
-            ops_merge_sort.append(comps)
-
-            # 4. Binary Search
-            mid_val = sorted_prods[n // 2]["price"]
             t0 = time.perf_counter()
-            bs_res = BinarySearch.search_by_exact_price(sorted_prods, mid_val)
-            t_bs = (time.perf_counter() - t0) * 1000.0
-            time_binary_search.append(t_bs)
-            ops_binary_search.append(bs_res["comparisons"])
+            merge_sort(items, key="price", ascending=True)
+            t_merge.append((time.perf_counter() - t0) * 1000.0)
 
-        self._render_charts(
-            sizes,
-            time_01_knapsack,
-            time_frac_knapsack,
-            time_merge_sort,
-            time_binary_search,
-            ops_merge_sort,
-            ops_binary_search,
-            ops_dp
-        )
-        self.benchmark_status.configure(text=f"Benchmark completed successfully ({len(sizes)} test points).", text_color="#10B981")
+        # Plot Matplotlib Graph
+        fig = Figure(figsize=(7, 3.2), dpi=100, facecolor="#1F2233")
+        ax = fig.add_subplot(111)
+        ax.set_facecolor("#181A26")
 
-    def _render_charts(self, sizes, t_dp, t_gr, t_ms, t_bs, ops_ms, ops_bs, ops_dp):
-        for child in self.chart_container.winfo_children():
-            child.destroy()
+        ax.plot(sizes, t_dp, marker="o", color="#A29BFE", label="0/1 Knapsack (DP)")
+        ax.plot(sizes, t_greedy, marker="s", color="#00CEC9", label="Fractional Knapsack (Greedy)")
+        ax.plot(sizes, t_merge, marker="^", color="#FDCB6E", label="Merge Sort (O(n log n))")
 
-        fig = Figure(figsize=(9.2, 3.8), dpi=100, facecolor="#1F2233")
-        ax1 = fig.add_subplot(121)
-        ax2 = fig.add_subplot(122)
-
-        # Chart 1: Execution Time (ms) vs Input Size N
-        ax1.set_facecolor("#181A26")
-        ax1.plot(sizes, t_dp, marker="o", color="#A29BFE", linewidth=2, label="0/1 Knapsack (DP)")
-        ax1.plot(sizes, t_gr, marker="s", color="#00CEC9", linewidth=2, label="Fractional Knapsack (Greedy)")
-        ax1.plot(sizes, t_ms, marker="^", color="#FDCB6E", linewidth=2, label="Merge Sort (O(n log n))")
-        ax1.plot(sizes, t_bs, marker="d", color="#FF7675", linewidth=2, label="Binary Search (O(log n))")
-
-        ax1.set_title("Execution Time (ms) vs. Number of Products (N)", color="#F3F4F6", fontsize=10, weight="bold", pad=8)
-        ax1.set_xlabel("Number of Products (N)", color="#CBD5E1", fontsize=9)
-        ax1.set_ylabel("Execution Time (milliseconds)", color="#CBD5E1", fontsize=9)
-        ax1.tick_params(colors="#9CA3AF", labelsize=8)
-        ax1.spines["bottom"].set_color("#2C3048")
-        ax1.spines["left"].set_color("#2C3048")
-        ax1.spines["top"].set_visible(False)
-        ax1.spines["right"].set_visible(False)
-        ax1.grid(True, linestyle="--", alpha=0.25, color="#4A5568")
-        ax1.legend(loc="upper left", fontsize=7.5, facecolor="#1F2233", edgecolor="#2C3048", labelcolor="#E2E8F0")
-
-        # Chart 2: Operations Count vs Input Size N
-        ax2.set_facecolor("#181A26")
-        ax2.plot(sizes, ops_ms, marker="^", color="#FDCB6E", linewidth=2, label="Merge Sort Comparisons")
-        ax2.plot(sizes, ops_bs, marker="d", color="#FF7675", linewidth=2, label="Binary Search Comparisons")
-
-        ax2.set_title("Algorithm Operations / Comparisons vs. N", color="#F3F4F6", fontsize=10, weight="bold", pad=8)
-        ax2.set_xlabel("Number of Products (N)", color="#CBD5E1", fontsize=9)
-        ax2.set_ylabel("Comparison Operations", color="#CBD5E1", fontsize=9)
-        ax2.tick_params(colors="#9CA3AF", labelsize=8)
-        ax2.spines["bottom"].set_color("#2C3048")
-        ax2.spines["left"].set_color("#2C3048")
-        ax2.spines["top"].set_visible(False)
-        ax2.spines["right"].set_visible(False)
-        ax2.grid(True, linestyle="--", alpha=0.25, color="#4A5568")
-        ax2.legend(loc="upper left", fontsize=7.5, facecolor="#1F2233", edgecolor="#2C3048", labelcolor="#E2E8F0")
+        ax.set_title("Empirical Execution Time vs. Input Size (N)", color="#F3F4F6", fontsize=11, weight="bold")
+        ax.set_xlabel("Number of Products (N)", color="#CBD5E1", fontsize=9)
+        ax.set_ylabel("Execution Time (ms)", color="#CBD5E1", fontsize=9)
+        ax.tick_params(colors="#CBD5E1", labelsize=8)
+        ax.grid(True, linestyle="--", alpha=0.3, color="#4A5568")
+        ax.legend(facecolor="#1F2233", edgecolor="#2C3048", labelcolor="#F3F4F6", fontsize=8)
 
         fig.tight_layout()
-
-        canvas = FigureCanvasTkAgg(fig, master=self.chart_container)
+        canvas = FigureCanvasTkAgg(fig, master=self.chart_frame)
         canvas.draw()
-        canvas.get_tk_widget().pack(fill="both", expand=True)
+        canvas.get_tk_widget().pack(fill="both", expand=True, padx=10, pady=10)

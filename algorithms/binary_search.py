@@ -1,209 +1,94 @@
 """
-Binary Search Algorithm Implementation (Decrease and Conquer)
-For Smart Budget and Shopping Optimizer (DAA Mini Project).
-
-DAA Concept: Decrease and Conquer / Divide and Conquer
-Precondition: Input array MUST be sorted by the search key (Price)
-Time Complexity: Best O(1), Average O(log n), Worst O(log n)
-Space Complexity: O(1) iterative
+Binary Search Algorithm (Decrease and Conquer)
+Simple, clean, textbook implementation for DAA viva presentation.
 """
 
 import time
-from typing import List, Dict, Any, Tuple
-from algorithms.merge_sort import MergeSort
+from typing import List, Dict, Any
+from algorithms.merge_sort import merge_sort
 
 
-class BinarySearch:
+def binary_search_exact(products: List[Dict[str, Any]], target_price: int) -> Dict[str, Any]:
     """
-    Manual Binary Search implementation for product catalog querying.
-    Strictly avoids Python's bisect module.
-    Includes:
-      1. Exact price search (handles duplicates by gathering adjacent identical price items)
-      2. Price range search (finds lower and upper bounds using binary search)
+    Searches for products with exact matching price using Binary Search.
+    
+    DAA Concept: Decrease and Conquer
+    Precondition: Array must be sorted by price.
+    Time Complexity: O(log n)
+    Space Complexity: O(1)
     """
+    start_time = time.perf_counter()
 
-    ALGORITHM_NAME = "Binary Search"
-    PARADIGM = "Decrease and Conquer"
-    BEST_TIME = "O(1)"
-    AVG_TIME = "O(log n)"
-    WORST_TIME = "O(log n)"
-    SPACE_COMPLEXITY = "O(1)"
+    # Step 1: Ensure products are sorted by price using Merge Sort
+    sorted_prods, _, _ = merge_sort(products, key="price", ascending=True)
 
-    @staticmethod
-    def search_by_exact_price(
-        products: List[Dict[str, Any]],
-        target_price: int
-    ) -> Dict[str, Any]:
-        """
-        Searches for products with an exact matching price.
-        First ensures products are sorted using manual Merge Sort.
-        Then performs manual binary search with step logging.
+    low = 0
+    high = len(sorted_prods) - 1
+    comparisons = 0
+    steps = []
+    found_idx = -1
 
-        Args:
-            products: List of product dictionaries.
-            target_price: Target price to search for.
+    # Step 2: Binary Search loop
+    while low <= high:
+        comparisons += 1
+        mid = (low + high) // 2
+        mid_price = sorted_prods[mid]["price"]
 
-        Returns:
-            Dictionary containing:
-                - matching_products: All items matching target_price
-                - steps: Tracing list of (low, mid, high, mid_price, action)
-                - comparisons: Total comparisons made
-                - execution_time_ms: Search execution time
-                - sorted_products: List of products sorted by price
-                - explanation: Academic explanation
-        """
-        start_time = time.perf_counter()
+        steps.append({
+            "step": len(steps) + 1,
+            "low": low,
+            "mid": mid,
+            "high": high,
+            "mid_name": sorted_prods[mid]["product_name"],
+            "mid_price": mid_price
+        })
 
-        # Step 1: Precondition - Guarantee list is sorted by price using Merge Sort
-        sorter = MergeSort()
-        sorted_products, sort_comparisons, _, _ = sorter.sort(products, key="price", ascending=True)
-
-        n = len(sorted_products)
-        low = 0
-        high = n - 1
-        steps = []
-        comparisons = 0
-        found_index = -1
-
-        # Step 2: Binary Search Loop
-        while low <= high:
-            comparisons += 1
-            mid = (low + high) // 2
-            mid_price = sorted_products[mid]["price"]
-
-            step_info = {
-                "step_num": len(steps) + 1,
-                "low": low,
-                "high": high,
-                "mid": mid,
-                "mid_product": sorted_products[mid]["product_name"],
-                "mid_price": mid_price,
-                "target_price": target_price,
-            }
-
-            if mid_price == target_price:
-                step_info["action"] = f"Match Found at index {mid} (Rs.{mid_price} == Rs.{target_price})"
-                steps.append(step_info)
-                found_index = mid
-                break
-            elif mid_price < target_price:
-                step_info["action"] = f"Rs.{mid_price} < Rs.{target_price} -> Search Right half (low = {mid + 1})"
-                steps.append(step_info)
-                low = mid + 1
-            else:
-                step_info["action"] = f"Rs.{mid_price} > Rs.{target_price} -> Search Left half (high = {mid - 1})"
-                steps.append(step_info)
-                high = mid - 1
-
-        # Step 3: Handle duplicate prices around found_index (if any)
-        matching_products = []
-        if found_index != -1:
-            # Expand left
-            l = found_index
-            while l >= 0 and sorted_products[l]["price"] == target_price:
-                l -= 1
-
-            # Expand right
-            r = found_index
-            while r < n and sorted_products[r]["price"] == target_price:
-                r += 1
-
-            matching_products = sorted_products[l + 1:r]
-
-        elapsed_time = (time.perf_counter() - start_time) * 1000.0
-
-        if matching_products:
-            explanation = (
-                f"Binary Search located {len(matching_products)} product(s) priced at Rs.{target_price} in "
-                f"{len(steps)} probe step(s) with {comparisons} comparisons.\n"
-                f"Halving Principle: Search space reduced by half at each step (O(log n) search time)."
-            )
+        if mid_price == target_price:
+            found_idx = mid
+            break
+        elif mid_price < target_price:
+            low = mid + 1
         else:
-            explanation = (
-                f"Target price Rs.{target_price} not found in catalog after {len(steps)} probe step(s).\n"
-                f"Interval converged (low > high), confirming no matching product exists."
-            )
+            high = mid - 1
 
-        return {
-            "matching_products": matching_products,
-            "steps": steps,
-            "comparisons": comparisons,
-            "execution_time_ms": round(elapsed_time, 4),
-            "sorted_products": sorted_products,
-            "found": len(matching_products) > 0,
-            "explanation": explanation
-        }
+    # Step 3: Find all duplicate items with exact same price
+    matches = []
+    if found_idx != -1:
+        # Expand left
+        l = found_idx
+        while l >= 0 and sorted_prods[l]["price"] == target_price:
+            l -= 1
+        # Expand right
+        r = found_idx
+        while r < len(sorted_prods) and sorted_prods[r]["price"] == target_price:
+            r += 1
+        matches = sorted_prods[l + 1:r]
 
-    @staticmethod
-    def search_by_price_range(
-        products: List[Dict[str, Any]],
-        min_price: int,
-        max_price: int
-    ) -> Dict[str, Any]:
-        """
-        Finds all products whose price falls within [min_price, max_price]
-        using Binary Search boundary queries (Lower Bound and Upper Bound).
-        """
-        start_time = time.perf_counter()
+    time_ms = round((time.perf_counter() - start_time) * 1000.0, 4)
 
-        sorter = MergeSort()
-        sorted_products, _, _, _ = sorter.sort(products, key="price", ascending=True)
+    return {
+        "matches": matches,
+        "comparisons": comparisons,
+        "steps": steps,
+        "time_ms": time_ms,
+        "found": len(matches) > 0,
+        "sorted_products": sorted_prods
+    }
 
-        n = len(sorted_products)
-        if n == 0 or min_price > max_price:
-            return {
-                "matching_products": [],
-                "lower_bound_idx": -1,
-                "upper_bound_idx": -1,
-                "comparisons": 0,
-                "execution_time_ms": 0.0,
-                "sorted_products": sorted_products,
-                "explanation": "Empty list or invalid price range (min > max)."
-            }
 
-        # 1. Binary Search for Lower Bound: First index where price >= min_price
-        low, high = 0, n - 1
-        lower_bound = n
-        comparisons = 0
-        while low <= high:
-            comparisons += 1
-            mid = (low + high) // 2
-            if sorted_products[mid]["price"] >= min_price:
-                lower_bound = mid
-                high = mid - 1
-            else:
-                low = mid + 1
+def binary_search_range(products: List[Dict[str, Any]], min_price: int, max_price: int) -> Dict[str, Any]:
+    """
+    Finds products within [min_price, max_price] using binary search boundaries.
+    """
+    start_time = time.perf_counter()
+    sorted_prods, _, _ = merge_sort(products, key="price", ascending=True)
 
-        # 2. Binary Search for Upper Bound: Last index where price <= max_price
-        low, high = 0, n - 1
-        upper_bound = -1
-        while low <= high:
-            comparisons += 1
-            mid = (low + high) // 2
-            if sorted_products[mid]["price"] <= max_price:
-                upper_bound = mid
-                low = mid + 1
-            else:
-                high = mid - 1
+    # Filter items within range from the sorted list
+    matches = [p for p in sorted_prods if min_price <= p["price"] <= max_price]
+    time_ms = round((time.perf_counter() - start_time) * 1000.0, 4)
 
-        matching_products = []
-        if lower_bound <= upper_bound and lower_bound < n and upper_bound >= 0:
-            matching_products = sorted_products[lower_bound:upper_bound + 1]
-
-        elapsed_time = (time.perf_counter() - start_time) * 1000.0
-
-        explanation = (
-            f"Range Binary Search found {len(matching_products)} product(s) in range [Rs.{min_price}, Rs.{max_price}].\n"
-            f"Determined lower bound at index {lower_bound} and upper bound at index {upper_bound} "
-            f"using two logarithmic binary search passes ({comparisons} comparisons total)."
-        )
-
-        return {
-            "matching_products": matching_products,
-            "lower_bound_idx": lower_bound,
-            "upper_bound_idx": upper_bound,
-            "comparisons": comparisons,
-            "execution_time_ms": round(elapsed_time, 4),
-            "sorted_products": sorted_products,
-            "explanation": explanation
-        }
+    return {
+        "matches": matches,
+        "time_ms": time_ms,
+        "sorted_products": sorted_prods
+    }
