@@ -1,0 +1,21 @@
+product_id,product_name,category,price,priority,is_divisible
+P101,Noise-Cancelling Headphones,Electronics,3500,9,0
+P102,Smart Fitness Watch,Electronics,2200,7,0
+P103,10000mAh Power Bank,Electronics,1100,6,0
+P104,Portable Bluetooth Speaker,Electronics,1500,5,0
+P105,Water-Resistant Backpack,Accessories,1400,8,0
+P106,Insulated Steel Bottle,Accessories,450,6,0
+P107,Polarized UV Sunglasses,Accessories,850,4,0
+P108,Memory Foam Neck Pillow,Accessories,650,5,0
+P109,Hardcover Dotted Journal,Stationery,350,7,0
+P110,Premium Metal Pen Set,Stationery,500,5,0
+P111,Multi-tier Desk Organizer,Stationery,750,6,0
+P112,Sticky Notes & Tab Pack,Stationery,200,4,0
+P113,Mechanical Gaming Keyboard,Computer Peripherals,2800,9,0
+P114,Wireless Ergonomic Mouse,Computer Peripherals,950,7,0
+P115,1080p Streaming Webcam,Computer Peripherals,1800,8,0
+P116,Extended Desk Mousepad,Computer Peripherals,400,5,0
+P117,Roasted Coffee Beans (1kg),Daily Essentials,800,8,1
+P118,California Almonds (1kg),Daily Essentials,900,7,1
+P119,Gourmet Dark Chocolate Bites,Daily Essentials,300,6,1
+P120,Organic Green Tea (500g),Daily Essentials,450,7,1
