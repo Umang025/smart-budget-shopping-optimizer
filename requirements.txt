@@ -1,0 +1,6 @@
+# Smart Budget and Shopping Optimizer - Dependencies
+# DAA MCA Mini Project
+
+customtkinter>=5.2.0
+matplotlib>=3.7.0
+pillow>=9.5.0
